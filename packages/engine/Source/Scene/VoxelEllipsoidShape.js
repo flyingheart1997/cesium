@@ -535,9 +535,6 @@ VoxelEllipsoidShape.prototype.update = function (
       intersectionCount += 1;
 
       // The inverse of the percent of space that is taken up by the inner ellipsoid, relative to the shape bounds
-      // 1.0 / (1.0 - thickness) // thickness = percent of space that is between the min and max height.
-      // 1.0 / (1.0 - (shapeMaxHeight - renderMinHeight) / shapeMaxExtent)
-      // shapeMaxExtent / (shapeMaxExtent - (shapeMaxHeight - renderMinHeight))
       shaderUniforms.ellipsoidInverseInnerScaleUv =
         shapeMaxExtent / (shapeMaxExtent - (shapeMaxHeight - renderMinHeight));
     }
@@ -612,15 +609,6 @@ VoxelEllipsoidShape.prototype.update = function (
       ] = true;
     }
 
-    // delerp(longitudeUv, minLongitudeUv, maxLongitudeUv)
-    // (longitudeUv - minLongitudeUv) / (maxLongitudeUv - minLongitudeUv)
-    // longitudeUv / (maxLongitudeUv - minLongitudeUv) - minLongitudeUv / (maxLongitudeUv - minLongitudeUv)
-    // scale = 1.0 / (maxLongitudeUv - minLongitudeUv)
-    // scale = 1.0 / (((maxLongitude - pi) / (2.0 * pi)) - ((minLongitude - pi) / (2.0 * pi)))
-    // scale = 2.0 * pi / (maxLongitude - minLongitude)
-    // offset = -minLongitudeUv / (maxLongitudeUv - minLongitudeUv)
-    // offset = -((minLongitude - pi) / (2.0 * pi)) / (((maxLongitude - pi) / (2.0 * pi)) - ((minLongitude - pi) / (2.0 * pi)))
-    // offset = -(minLongitude - pi) / (maxLongitude - minLongitude)
     const scale = defaultLongitudeRange / shapeLongitudeRange;
     const offset =
       -(shapeMinLongitude - defaultMinLongitude) / shapeLongitudeRange;
@@ -758,16 +746,6 @@ VoxelEllipsoidShape.prototype.update = function (
       ] = true;
     }
 
-    // delerp(latitudeUv, minLatitudeUv, maxLatitudeUv)
-    // (latitudeUv - minLatitudeUv) / (maxLatitudeUv - minLatitudeUv)
-    // latitudeUv / (maxLatitudeUv - minLatitudeUv) - minLatitudeUv / (maxLatitudeUv - minLatitudeUv)
-    // scale = 1.0 / (maxLatitudeUv - minLatitudeUv)
-    // scale = 1.0 / (((maxLatitude - pi) / (2.0 * pi)) - ((minLatitude - pi) / (2.0 * pi)))
-    // scale = 2.0 * pi / (maxLatitude - minLatitude)
-    // offset = -minLatitudeUv / (maxLatitudeUv - minLatitudeUv)
-    // offset = -((minLatitude - -pi) / (2.0 * pi)) / (((maxLatitude - pi) / (2.0 * pi)) - ((minLatitude - pi) / (2.0 * pi)))
-    // offset = -(minLatitude - -pi) / (maxLatitude - minLatitude)
-    // offset = (-pi - minLatitude) / (maxLatitude - minLatitude)
     const scale = defaultLatitudeRange / shapeLatitudeRange;
     const offset = (defaultMinLatitude - shapeMinLatitude) / shapeLatitudeRange;
     shaderUniforms.ellipsoidUvToShapeUvLatitude = Cartesian2.fromElements(
