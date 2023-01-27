@@ -13,18 +13,6 @@ struct Ray {
 #endif
 };
 
-struct RaySurfaceIntersection {
-    // Distance along ray from ray origin to intersection
-    float t;
-    // type = 0: positive shape entry
-    // type = 1: positive shape exit
-    // type = 2: negative shape entry
-    // type = 3: negative shape exit
-    // TODO: use integer
-    float type;
-    // vec3 normal;
-};
-
 struct Intersections {
     // Don't access these member variables directly - call the functions instead.
 
@@ -37,8 +25,9 @@ struct Intersections {
         //  y = 1: positive shape exit
         //  y = 2: negative shape entry
         //  y = 3: negative shape exit
-        //vec2 intersections[INTERSECTION_COUNT * 2];
-        RaySurfaceIntersection intersections[INTERSECTION_COUNT * 2];
+        // INTERSECTION_COUNT is the number of ray-*shape* intersections,
+        // so we need twice as many to track ray-*surface* intersections
+        vec2 intersections[INTERSECTION_COUNT * 2];
 
         // Maintain state for future nextIntersection calls
         int index;
@@ -52,7 +41,7 @@ struct Intersections {
 
 // Using a define instead of a real function because WebGL1 cannot access array with non-constant index.
 #if (INTERSECTION_COUNT > 1)
-    #define getIntersection(/*inout Intersections*/ ix, /*int*/ index) (ix).intersections[(index)].t
+    #define getIntersection(/*inout Intersections*/ ix, /*int*/ index) (ix).intersections[(index)].x
 #else
     #define getIntersection(/*inout Intersections*/ ix, /*int*/ index) (ix).intersections[(index)]
 #endif
@@ -62,14 +51,14 @@ struct Intersections {
 
 // Using a define instead of a real function because WebGL1 cannot access array with non-constant index.
 #if (INTERSECTION_COUNT > 1)
-    #define setIntersection(/*inout Intersections*/ ix, /*int*/ index, /*float*/ t, /*bool*/ positive, /*bool*/ enter) (ix).intersections[(index)] = RaySurfaceIntersection((t), float(!positive) * 2.0 + float(!enter))
+    #define setIntersection(/*inout Intersections*/ ix, /*int*/ index, /*float*/ t, /*bool*/ positive, /*bool*/ enter) (ix).intersections[(index)] = vec2((t), float(!positive) * 2.0 + float(!enter))
 #else
     #define setIntersection(/*inout Intersections*/ ix, /*int*/ index, /*float*/ t, /*bool*/ positive, /*bool*/ enter) (ix).intersections[(index)] = (t)
 #endif
 
 // Using a define instead of a real function because WebGL1 cannot access array with non-constant index.
 #if (INTERSECTION_COUNT > 1)
-    #define setIntersectionPair(/*inout Intersections*/ ix, /*int*/ index, /*vec2*/ entryExit) (ix).intersections[(index) * 2 + 0] = RaySurfaceIntersection((entryExit).x, float((index) > 0) * 2.0 + 0.0); (ix).intersections[(index) * 2 + 1] = RaySurfaceIntersection((entryExit).y, float((index) > 0) * 2.0 + 1.0)
+    #define setIntersectionPair(/*inout Intersections*/ ix, /*int*/ index, /*vec2*/ entryExit) (ix).intersections[(index) * 2 + 0] = vec2((entryExit).x, float((index) > 0) * 2.0 + 0.0); (ix).intersections[(index) * 2 + 1] = vec2((entryExit).y, float((index) > 0) * 2.0 + 1.0)
 #else
     #define setIntersectionPair(/*inout Intersections*/ ix, /*int*/ index, /*vec2*/ entryExit) (ix).intersections[(index) * 2 + 0] = (entryExit).x; (ix).intersections[(index) * 2 + 1] = (entryExit).y
 #endif
@@ -86,21 +75,13 @@ void initializeIntersections(inout Intersections ix) {
             // loop with non-constant condition, so it has to break early instead
             if (i >= n) { break; }
 
-            RaySurfaceIntersection intersect0 = ix.intersections[i + 0];
-            RaySurfaceIntersection intersect1 = ix.intersections[i + 1];
+            vec2 intersect0 = ix.intersections[i + 0];
+            vec2 intersect1 = ix.intersections[i + 1];
 
-            float t0 = intersect0.t;
-            float t1 = intersect1.t;
-            float type0 = intersect0.type;
-            float type1 = intersect1.type;
+            bool inOrder = intersect0.x <= intersect1.x;
 
-            float tmin = min(t0, t1);
-            float tmax = max(t0, t1);
-            float bmin = tmin == t0 ? type0 : type1;
-            float bmax = tmin == t0 ? type1 : type0;
-
-            ix.intersections[i + 0] = RaySurfaceIntersection(tmin, bmin);
-            ix.intersections[i + 1] = RaySurfaceIntersection(tmax, bmax);
+            ix.intersections[i + 0] = inOrder ? intersect0 : intersect1;
+            ix.intersections[i + 1] = inOrder ? intersect1 : intersect0;
         }
     }
 
@@ -130,10 +111,10 @@ vec2 nextIntersection(inout Intersections ix) {
 
         ix.index = i + 1;
 
-        RaySurfaceIntersection intersect = ix.intersections[i];
-        float t = intersect.t;
-        bool currShapeIsPositive = intersect.type < 2.0;
-        bool enter = mod(intersect.type, 2.0) == 0.0;
+        vec2 intersect = ix.intersections[i];
+        float t = intersect.x;
+        bool currShapeIsPositive = intersect.y < 2.0;
+        bool enter = mod(intersect.y, 2.0) == 0.0;
 
         ix.surroundCount += enter ? +1 : -1;
         ix.surroundIsPositive = currShapeIsPositive ? enter : ix.surroundIsPositive;
@@ -164,4 +145,3 @@ vec2 nextIntersection(inout Intersections ix) {
 #endif
 
 // NOTE: initializeIntersections, nextIntersection aren't even declared unless INTERSECTION_COUNT > 1
-// export { NO_HIT, INF_HIT, Ray, Intersections, getIntersectionPair, setIntersectionPair, initializeIntersections, nextIntersection };
