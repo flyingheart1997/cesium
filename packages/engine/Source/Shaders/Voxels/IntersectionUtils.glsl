@@ -109,7 +109,6 @@ void nextIntersection(inout Intersections ix, in vec3 dir, out vec4 entry, out v
         }
 
         // exiting positive or entering negative after being inside positive
-        // TODO: Can this be simplified?
         bool exitPositive = !enter && currShapeIsPositive && ix.surroundCount == 0;
         bool enterNegativeFromPositive = enter && !currShapeIsPositive && ix.surroundCount == 2 && ix.surroundIsPositive;
         if (exitPositive || enterNegativeFromPositive) {
