@@ -15,9 +15,12 @@ void intersectDepth(in vec2 screenCoord, in Ray ray, inout Intersections ix) {
         eyeCoordinateDepth /= eyeCoordinateDepth.w;
         vec3 depthPositionUv = vec3(u_transformPositionViewToUv * eyeCoordinateDepth);
         float t = dot(depthPositionUv - ray.pos, ray.dir);
-        setIntersectionPair(ix, DEPTH_INTERSECTION_INDEX, vec2(t, +INF_HIT));
+        // We don't have a normal for the depth, so use the ray direction for now
+        vec4 hitPoint = vec4(-ray.dir, t);
+        vec4 farSide = vec4(+ray.dir, +INF_HIT);
+        setIntersectionPair(ix, DEPTH_INTERSECTION_INDEX, hitPoint, farSide);
     } else {
         // There's no depth at this location.
-        setIntersectionPair(ix, DEPTH_INTERSECTION_INDEX, vec2(NO_HIT));
+        setIntersectionPair(ix, DEPTH_INTERSECTION_INDEX, vec4(NO_HIT), vec4(NO_HIT));
     }
 }
