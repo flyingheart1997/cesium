@@ -51,7 +51,7 @@
     "./Specs/**/*"
   ],
   "dependencies": {
-    "@cesium/engine": "2.0.0",
+    "@cesium/engine": "2.4.0",
     "@cesium/widgets": "2.0.0"
   },
   "devDependencies": {
